@@ -1,4 +1,4 @@
-from Broadworks import XSI
+from Broadsoft import XSI
 from os import environ
 
 """
