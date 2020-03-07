@@ -2,8 +2,10 @@ from Broadworks import XSI
 from os import environ
 
 """
+
     Username is the full name with domain
     e.g. userid@deutschland-lan.de
+    
 """
 
 
