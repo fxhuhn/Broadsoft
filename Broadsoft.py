@@ -5,6 +5,37 @@ import collections
 from datetime import datetime
 from requests.auth import HTTPBasicAuth
 
+"""
+TODO:
+/v2.0/user/<userid>/directories/CallLogs
+/v2.0/user/<userid>/directories/CallLogs/Missed/<callLogId>
+/v2.0/user/<userid>/directories/CallLogs/Placed/<callLogId>
+/v2.0/user/<userid>/directories/CallLogs/Received/<callLogId>
+/v2.0/user/<userid>/directories/CustomContact
+/v2.0/user/<userid>/directories/CustomContact/<directoryName>
+/v2.0/user/<userid>/directories/EnhancedCallLogs
+/v2.0/user/<userid>/directories/EnhancedCallLogs/Missed
+/v2.0/user/<userid>/directories/EnhancedCallLogs/Missed/<callLogId>
+/v2.0/user/<userid>/directories/EnhancedCallLogs/Placed
+/v2.0/user/<userid>/directories/EnhancedCallLogs/Placed/<callLogId>
+/v2.0/user/<userid>/directories/EnhancedCallLogs/Received
+/v2.0/user/<userid>/directories/EnhancedCallLogs/Received/<callLogId>
+/v2.0/user/<userid>/directories/FlexibleSeatingHosts
+/v2.0/user/<userid>/directories/HotelingHosts
+
+DONE:
+/v2.0/user/<userid>/directories/CallLogs/Missed
+/v2.0/user/<userid>/directories/CallLogs/Placed
+/v2.0/user/<userid>/directories/CallLogs/Received
+/v2.0/user/<userid>/directories/Enterprise
+/v2.0/user/<userid>/directories/EnterpriseCommon
+/v2.0/user/<userid>/directories/Group
+/v2.0/user/<userid>/directories/GroupCommon
+/v2.0/user/<userid>/directories/Personal
+
+
+"""
+
 
 class XSI:
     """
@@ -15,17 +46,16 @@ class XSI:
         https://pubhub.devnetcloud.com/media/broadsoft-docs/docs/pdf/BW-XSIInterfaceSpec-R230.pdf
     """
 
-    def __init__(self,bw_user, bw_password, host='https://client.deutschland-lan.de'):
+    def __init__(self,bw_user:str, bw_password:str, host='https://client.deutschland-lan.de'):
         self.bw_user = bw_user
         self.bw_password = bw_password
         self.xsi_url = host + '/com.broadsoft.xsi-actions/v2.0/user'
-        self.headers = {'user-agent': 'XSI-Client/0.0.1'}
+        self.headers = {'user-agent': 'XSI-Client/0.0.1', 'Content-type': 'application/xml; charset=UTF-8'}
 
     def __doc__(self):
         return \
             "Cisco BroadWorks Xtended Services Interface Interface Specification" \
             "Release 23.0 Document Version 3"
-
 
     def __build_url(self, action, user=None) -> str:
         if user is None:
@@ -38,6 +68,13 @@ class XSI:
             return xmltodict.parse(response.text)
         else:
             return None
+
+
+    def profile(self) -> dict:
+        #TODO: Actual only a placeholder
+        XSI_COMMAND = '/Profile'
+        return self.__get(XSI_COMMAND)
+
 
     def directories_personal(self, start=1, step=50) -> dict:
 
@@ -52,7 +89,7 @@ class XSI:
 
         if max >0 :
             for i in range(start, max, step):
-                for directory_item in _get(XSI_COMMAND, {'start': i})['Personal']['commonPhoneEntry']:
+                for directory_item in self.__get(XSI_COMMAND, {'start': i})['Personal']['commonPhoneEntry']:
                     keys=list(directory_item.keys())
                     values=list(directory_item.values())
 
@@ -76,7 +113,7 @@ class XSI:
 
         if max >0 :
             for i in range(start, max, step):
-                for directory_item in _get(XSI_COMMAND, {'start': i})['GroupCommon']['commonPhoneEntry']:
+                for directory_item in self.__get(XSI_COMMAND, {'start': i})['GroupCommon']['commonPhoneEntry']:
                     keys=list(directory_item.keys())
                     values=list(directory_item.values())
 
@@ -115,7 +152,7 @@ class XSI:
 
         return directory
 
-    def directories_enterprise(self, start=1, step=50) -> dict:
+    def directories_enterprise(self, start=1, step=50, hirangana=0) -> dict:
 
         def identify_total_records(action):
             xsi_response = self.__get(action, {'start': 1, 'numberOfRecords': 1})
@@ -138,6 +175,10 @@ class XSI:
                             # TODO: eliminate quick & dirty method
                             del directory_item['additionalDetails']
 
+                            if not hirangana:
+                                del directory_item['hiranganaLastName']
+                                del directory_item['hiranganaFirstName']
+
                     keys = list(directory_item.keys())
                     values = list(directory_item.values())
 
@@ -145,7 +186,7 @@ class XSI:
         return directory
 
 
-    def directories_group(self, start=1, step=50) -> dict:
+    def directories_group(self, start=1, step=50, hirangana=0) -> dict:
 
         def identify_total_records(action):
             xsi_response = self.__get(action, {'start': 1, 'numberOfRecords': 1})
@@ -167,6 +208,10 @@ class XSI:
 
                             # TODO: eliminate quick & dirty method
                             del directory_item['additionalDetails']
+
+                            if not hirangana:
+                                del directory_item['hiranganaLastName']
+                                del directory_item['hiranganaFirstName']
 
                     keys = list(directory_item.keys())
                     values = list(directory_item.values())
